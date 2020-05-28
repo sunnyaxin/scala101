@@ -63,22 +63,35 @@ object Main3 extends App {
 //    _.reverse.take(10).foreach { case WordFrequency(word, counts) => println(s"$word $counts") }
 //  )
 
+  implicit val urlTransformer: Transformer[URL] = new Transformer[URL] {
+    override def transform(input: String): URL = new URL(input)
+  }
+
+  implicit val fileTransformer: Transformer[File] = new Transformer[File] {
+    override def transform(input: String): File = new File(input)
+  }
+
+  implicit class StringOps(input: String) {
+    def as[T](implicit transformer: Transformer[T]):T = transformer.transform(input)
+  }
+
   val wordCount = new WordCount
   val input = Try {
     sys.env.getOrElse("INPUT", "INVALID").split(":").toList match {
-      case "FILE" :: file :: Nil => Source.fromFile(file.toFile).getLines().toList.mkString
-      case "URL" :: tail         => Source.fromURL(tail.mkString(":").toUrl).getLines().toList.mkString
-      case "INVALID" :: _        => throw (new Throwable("The input env does not exist."))
+      case "FILE" :: file :: Nil => Source.fromFile(file.as[File]).getLines().toList.mkString
+      case "URL" :: tail         => Source.fromURL(tail.mkString(":").as[URL]).getLines().toList.mkString
+      case _        => throw (new Throwable("The input env does not exist."))
     }
   }
-  implicit class StringOps(s: String) {
-    def toUrl(): URL   = new URL(s)
-    def toFile(): File = new File(s)
-  }
+
   input
     .map(wordCount.listWords)
     .fold(
       error => println(error),
       _.reverse.take(10).foreach { case WordFrequency(word, counts) => println(s"$word $counts") }
     )
+}
+
+trait Transformer[T] {
+  def transform(input: String): T //Either[Throwable, URL]
 }
