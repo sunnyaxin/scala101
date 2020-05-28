@@ -10,7 +10,7 @@ class WordCount {
     }.toList.sortBy(_.counts)
 
   private[wordcount] def countWords(words: List[String]): Map[String, Int] =
-    words.groupBy(_.toString).map { case (key, values) => (key, values.size) }
+    words.groupBy(identity).map { case (key, values) => (key, values.size) }
 
   private[wordcount] def extractWords(text: String): List[String] =
     text
